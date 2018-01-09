@@ -21,9 +21,13 @@ module RedmineEmailInlineImages
         email_images = {}
         email.all_parts.each do |part|
             if part['Content-ID']
-                cid = "cid:#{part['Content-ID'].element.message_ids[0]}"
+                if part['Content-ID'].respond_to?(:element)
+                    content_id = part['Content-ID'].element.message_ids[0]
+                else
+                    content_id = part['Content-ID'].value.gsub(%r{(^<|>$)}, '')
+                end
                 image = part.header['Content-Type'].parameters['name']
-                email_images[cid] = image
+                email_images["cid:#{content_id}"] = image
             end
         end
         
