@@ -5,6 +5,7 @@ Handle inline images on incoming emails, so that they are included inline in the
 ## Features
 
 * Issues created with email requests will include inline images from the email in the issue description.
+* When adding attachments to issue, ignore inline images that is truncated.
 
 ## Getting the plugin
 
@@ -32,7 +33,7 @@ Further information about plugin installation can be found at: http://www.redmin
 
 ## Compatibility
 
-The latest version of this plugin is only tested with Redmine 2.3.x.
+The latest version of this plugin is only tested with Redmine 2.3.x and 3.3.2.
 
 
 ## License
