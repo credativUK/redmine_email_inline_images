@@ -5,6 +5,7 @@ module RedmineEmailInlineImages
       
       base.class_eval do
         alias_method_chain :plain_text_body, :email_inline_images
+        alias_method_chain :accept_attachment?, :checking_truncation
       end
     end
     
@@ -52,6 +53,43 @@ module RedmineEmailInlineImages
         @plain_text_body
       end
       
+      # Returns false if the +attachment+ is a truncated inline image, or the +attachment+ of the incoming email should be ignored by name.
+      def accept_attachment_with_checking_truncation?(attachment)
+        @truncated_inline_images ||= find_inline_images_from_body(truncated_plain_text_body)
+        @truncated_inline_images.each do |filename|
+          if attachment.filename.to_s == filename
+            logger.info "MailHandler: ignoring attachment #{attachment.filename} matching truncated inline image #{filename}"
+            return false
+          end
+        end unless @truncated_inline_images.nil?
+        accept_attachment_without_checking_truncation?(attachment)
+      end
+
+      def truncated_plain_text_body
+        return @truncated_plain_text_body unless @truncated_plain_text_body.nil?
+
+        ## Code refers cleanup_body in mail_handler.rb, with regex supported.
+        delimiters = Setting.mail_handler_body_delimiters.to_s.split(/[\r\n]+/).reject(&:blank?)
+    
+        begin
+          delimiters = delimiters.map {|s| Regexp.new(s)}
+        rescue RegexpError => e
+          logger.error "MailHandler: invalid regexp delimiter found in mail_handler_body_delimiters setting (#{e.message})" if logger
+        end
+    
+        unless delimiters.empty?
+          regex = Regexp.new("^[> ]*(#{ Regexp.union(delimiters) })[[:blank:]]*[\r\n].*", Regexp::MULTILINE)
+          @truncated_plain_text_body = @plain_text_body[regex, 0] || ""
+        end
+
+        @truncated_plain_text_body
+      end
+
+      # Find filenames for truncated inline images.
+      def find_inline_images_from_body(body)
+        body.scan(/(?<=^\!\[\]\().*(?=\))|(?<=^\!).*(?=\!)/).uniq
+      end
+
     end # module InstanceMethods
   end # module MailHandlerPatch
 end # module RedmineEmailInlineImages
