@@ -6,6 +6,7 @@ module RedmineEmailInlineImages
       base.class_eval do
         alias_method_chain :plain_text_body, :email_inline_images
         alias_method_chain :accept_attachment?, :checking_truncation
+        alias_method_chain :issue_attributes_from_keywords, :parent_id
       end
     end
     
@@ -90,7 +91,17 @@ module RedmineEmailInlineImages
       def find_inline_images_from_body(body)
         body.scan(/(?<=^\!\[\]\().*(?=\))|(?<=^\!).*(?=\!)/).uniq
       end
+    
+      # Overrides the issue_attributes_from_keywords method to
+      # include parent_id into issue_attribute
+      def issue_attributes_from_keywords_with_parent_id(issue)
+        attrs = issue_attributes_from_keywords_without_parent_id(issue)
+        k = get_keyword(:parent_issue)
+        attrs['parent_issue_id'] = k unless k.blank?
 
+        attrs
+      end
+  
     end # module InstanceMethods
   end # module MailHandlerPatch
 end # module RedmineEmailInlineImages
