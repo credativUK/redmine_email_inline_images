@@ -36,7 +36,7 @@ module RedmineEmailInlineImages
         # replace html images with text bang notation
         email_doc = Nokogiri::HTML(@plain_text_body)
         email_doc.xpath('//img').each do |image|
-            image_deleted = accept_attachment?(Attachment.create(:filename => email_images[image['src']], :author => user)) ? "" : "(image deleted)"
+            image_deleted = accept_attachment_without_checking_truncation?(Attachment.create(:filename => email_images[image['src']], :author => user)) ? "" : "(image deleted)"
             case Setting.text_formatting
             when 'markdown'
                 image_bang = "\n![#{image_deleted}](#{email_images[image['src']]})"
