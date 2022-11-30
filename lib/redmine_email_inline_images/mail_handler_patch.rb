@@ -16,9 +16,9 @@ module RedmineEmailInlineImages
       # include inline images from an email for
       # an issue created by an email request
       def plain_text_body_with_email_inline_images
-        return @plain_text_body unless @plain_text_body.nil?
+        return @plain_text_body_with_inline_images unless @plain_text_body_with_inline_images.nil?
         part = email.html_part || email.text_part || email
-        @plain_text_body = Redmine::CodesetUtil.to_utf8(part.body.decoded, part.charset)
+        body = Redmine::CodesetUtil.to_utf8(part.body.decoded, part.charset)
     
         email_images = {}
         email.all_parts.each do |part|
@@ -34,7 +34,7 @@ module RedmineEmailInlineImages
         end
         
         # replace html images with text bang notation
-        email_doc = Nokogiri::HTML(@plain_text_body)
+        email_doc = Nokogiri::HTML(body)
         email_doc.xpath('//img').each do |image|
             image_deleted = accept_attachment_without_checking_truncation?(Attachment.create(:filename => email_images[image['src']], :author => user)) ? "" : "(image deleted)"
             case Setting.text_formatting
@@ -47,12 +47,12 @@ module RedmineEmailInlineImages
             end
             image.replace(email_doc.create_text_node(image_bang)) if image_bang
         end
-        @plain_text_body = email_doc.to_html
+        body = email_doc.to_html
         
         # strip html tags and remove doctype directive
-        @plain_text_body = self.class.html_body_to_text(@plain_text_body)
-        @plain_text_body.gsub! %r{^[\t ]+}, ''
-        @plain_text_body
+        body = self.class.html_body_to_text(body).gsub(%r{^[\t ]+}, '')
+        @plain_text_body_with_inline_images = body
+        @plain_text_body_with_inline_images
       end
       
       # Returns false if the +attachment+ is a truncated inline image, or the +attachment+ of the incoming email should be ignored by name.
