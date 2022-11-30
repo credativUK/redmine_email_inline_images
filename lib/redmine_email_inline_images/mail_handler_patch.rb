@@ -78,10 +78,10 @@ module RedmineEmailInlineImages
         rescue RegexpError => e
           logger.error "MailHandler: invalid regexp delimiter found in mail_handler_body_delimiters setting (#{e.message})" if logger
         end
-    
+
         unless delimiters.empty?
-          regex = Regexp.new("^[> ]*(#{ Regexp.union(delimiters) })[[:blank:]]*[\r\n].*", Regexp::MULTILINE)
-          @truncated_plain_text_body = @plain_text_body[regex, 0] || ""
+          regex = Regexp.new("(#{ Regexp.union(delimiters) })", Regexp::MULTILINE)
+          @truncated_plain_text_body = plain_text_body.scan(regex).join("\r\n") || ""
         end
 
         @truncated_plain_text_body
@@ -89,7 +89,7 @@ module RedmineEmailInlineImages
 
       # Find filenames for truncated inline images.
       def find_inline_images_from_body(body)
-        body.scan(/(?<=^\!\[\]\().*(?=\))|(?<=^\!).*(?=\!)/).uniq
+        body.scan(/(?-m:(?<=\!\[\]\()[^\r\n\)]*(?=\))|(?<=\!)[^\r\n\)]*(?=\!))/).uniq
       end
     
       # Overrides the issue_attributes_from_keywords method to
