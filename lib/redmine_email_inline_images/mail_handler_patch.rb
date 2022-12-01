@@ -53,7 +53,7 @@ module RedmineEmailInlineImages
         body = self.class.html_body_to_text(body).gsub(%r{^[\t ]+}, '')
 
         # Simplify mail address
-        regex = Regexp.new('(?m-x:(?<=[;\uFF1A:])\*?\*? ([^<\r\n]+) < \[[\w@\.]+\]\(([\w@:\.]+)\) >(?=;| ?$))')
+        regex = Regexp.new('(?m-x:(?<=[;\uFF1A:]|[;\uFF1A:]\*\*) ([^<\r\n]+) < \[[\w@\.]+\]\(([\w@:\.]+)\) >(?=;| ?$))')
         body = body.gsub(regex, ' [\1](\2)') unless body.nil?
 
         @plain_text_body_with_inline_images = body
