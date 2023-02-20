@@ -18,7 +18,9 @@ module RedmineEmailInlineImages
       def plain_text_body_with_email_inline_images
         return @plain_text_body_with_inline_images unless @plain_text_body_with_inline_images.nil?
         part = email.html_part || email.text_part || email
-        body = Redmine::CodesetUtil.to_utf8(part.body.decoded, part.charset)
+        body_charset = Mail::RubyVer.respond_to?(:pick_encoding) ?
+                        Mail::RubyVer.pick_encoding(part.charset).to_s : part.charset
+        body = Redmine::CodesetUtil.to_utf8(part.body.decoded, body_charset)
     
         email_images = {}
         email.all_parts.each do |part|
