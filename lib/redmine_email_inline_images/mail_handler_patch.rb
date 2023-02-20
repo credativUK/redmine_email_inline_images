@@ -38,7 +38,7 @@ module RedmineEmailInlineImages
         # replace html images with text bang notation
         email_doc = Nokogiri::HTML(body)
         email_doc.xpath('//img').each do |image|
-            image_deleted = accept_attachment_without_checking_truncation?(Attachment.create(:filename => email_images[image['src']], :author => user)) ? "" : "(image deleted)"
+            image_deleted = accept_attachment_name?(email_images[image['src']]) ? "" : "(image deleted)"
             case Setting.text_formatting
             when 'markdown'
                 image_bang = "\n![#{image_deleted}](#{email_images[image['src']]})"
@@ -60,6 +60,19 @@ module RedmineEmailInlineImages
 
         @plain_text_body_with_inline_images = body
         @plain_text_body_with_inline_images
+      end
+
+      # Returns false if the +attachment+'s name of the incoming email should be ignored
+      def accept_attachment_name?(attachment_name)
+        @excluded ||= Setting.mail_handler_excluded_filenames.to_s.split(',').map(&:strip).reject(&:blank?)
+        @excluded.each do |pattern|
+          regexp = %r{\A#{Regexp.escape(pattern).gsub("\\*", ".*")}\z}i
+          if attachment_name =~ regexp
+            logger.info "MailHandler: ignoring attachment #{attachment_name} matching #{pattern}"
+            return false
+          end
+        end
+        true
       end
       
       # Returns false if the +attachment+ is a truncated inline image, or the +attachment+ of the incoming email should be ignored by name.
